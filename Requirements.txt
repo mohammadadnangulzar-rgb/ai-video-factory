@@ -1,0 +1,6 @@
+streamlit
+moviepy>=2.0.0
+edge-tts
+openai-whisper
+requests
+torch
