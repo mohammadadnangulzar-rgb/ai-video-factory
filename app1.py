@@ -136,7 +136,7 @@ def create_subtitles(VOICE_FILE):
                 color='white',
                 stroke_color='black',
                 stroke_width=4,
-                font="DejaVu-Sans", 
+                font="DejaVuSans", 
                 size=(subtitle_width, None),
                 bg_color=(0, 0, 0, 160),
                 method='caption'
