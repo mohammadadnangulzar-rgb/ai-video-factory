@@ -12,28 +12,23 @@ os.environ["IMAGEMAGICK_BINARY"] = "/usr/bin/convert"
 PEXELS_API_KEY = st.secrets.get("PEXELS_API_KEY", "")
 
 st.set_page_config(page_title="AI Reel Maker", layout="centered")
-st.title("🎬 Dynamic AI Faceless Reel Maker")
-st.markdown("**Cloud Engine Active with Advanced Theme Controls**")
+st.title("🎬 Roman Urdu AI Faceless Reel Maker")
+st.markdown("**Cloud Engine Active with Natural Pakistani/Asian Voices**")
 
 # ================== SIDEBAR ==================
 st.sidebar.header("🎯 Reel Settings")
-text_input = st.sidebar.text_area("Script (Voiceover)", "Self love is the foundation of a happy life. Every single day, remind yourself of your worth and keep pushing forward.", height=130)
+text_input = st.sidebar.text_area("Script (Roman Urdu)", "Self love yani khud se muhabbat zindgi ki sab se barhi zaroorat hai. Har din khud ko apni value yaad dilayein.", height=130)
 
 st.sidebar.markdown("---")
 st.sidebar.subheader("🎥 Video Layout")
 
-# Number input count badhane ke liye
 num_themes = st.sidebar.number_input("How many video clips (themes)?", min_value=1, max_value=10, value=3, step=1, key="num_themes_count")
 
 active_themes = []
-# Har theme field ke sath handle lagana
 for i in range(int(num_themes)):
     st.sidebar.markdown(f"**Scene {i+1}**")
-    
-    # 1. Chekbox lagaya jo cross (Delete) ka kaam karega
     is_removed = st.sidebar.checkbox(f"❌ Remove Scene {i+1}", key=f"remove_check_{i}")
     
-    # 2. Agar checkbox tick nahi hai, toh input box show karo aur active list mein daalo
     if not is_removed:
         default_val = "nature" if i == 0 else f"motivation {i+1}"
         theme_val = st.sidebar.text_input(f"Keyword for Scene {i+1}", value=default_val, key=f"theme_input_key_{i}", label_visibility="collapsed")
@@ -43,7 +38,19 @@ for i in range(int(num_themes)):
     
     st.sidebar.markdown("---")
 
-voice_option = st.sidebar.selectbox("Select Voice", ["en-US-ChristopherNeural", "en-US-EmmaNeural"])
+# --- NEW: BEHTREEN ROMAN URDU VOICES ---
+voice_display = st.sidebar.selectbox(
+    "Select Voice (Asian/Urdu Accent)", 
+    [
+        "ur-PK-AsafNeural (Pakistani Male)", 
+        "ur-PK-UzmaNeural (Pakistani Female)",
+        "hi-IN-MadhurNeural (Indian/Urdu Male)",
+        "hi-IN-SwaraNeural (Indian/Urdu Female)"
+    ]
+)
+# Asli voice id nikalne ke liye split kiya
+voice_option = voice_display.split(" ")[0]
+
 generate_button = st.sidebar.button("🚀 Generate Reel", type="primary", use_container_width=True)
 
 # ================== FUNCTIONS ==================
@@ -98,10 +105,10 @@ if generate_button:
     with st.status("🏗️ Building your Custom Reel on Cloud...", expanded=True) as status:
         try:
             # 1. Voice
-            st.write("🎙️ Generating Voice...")
+            st.write(f"🎙️ Generating Voice using {voice_display}...")
             asyncio.run(edge_tts.Communicate(text_input, voice_option).save("voice.mp3"))
 
-            # 2. Dynamic Media Download (Sirf active themes ka)
+            # 2. Media Download
             st.write(f"🔍 Downloading {len(active_themes)} Video Clips...")
             downloaded_files = []
             for idx, theme in enumerate(active_themes):
@@ -118,7 +125,6 @@ if generate_button:
             audio = AudioFileClip("voice.mp3")
             total_dur = audio.duration
             
-            # Duration allocation
             clip_duration = total_dur / len(downloaded_files)
             
             video_clips = []
