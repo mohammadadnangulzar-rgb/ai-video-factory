@@ -4,3 +4,4 @@ edge-tts
 openai-whisper
 requests
 torch
+gTTS
