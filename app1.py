@@ -13,7 +13,7 @@ PEXELS_API_KEY = st.secrets.get("PEXELS_API_KEY", "")
 
 st.set_page_config(page_title="AI Reel Maker", layout="centered")
 st.title("🎬 Dynamic AI Faceless Reel Maker")
-st.markdown("**Cloud Engine Active with Dynamic Themes**")
+st.markdown("**Cloud Engine Active with Advanced Theme Controls**")
 
 # ================== SIDEBAR ==================
 st.sidebar.header("🎯 Reel Settings")
@@ -22,17 +22,27 @@ text_input = st.sidebar.text_area("Script (Voiceover)", "Self love is the founda
 st.sidebar.markdown("---")
 st.sidebar.subheader("🎥 Video Layout")
 
-# Number input ko handle karne ka sabse stable tareeka widget key ke sath
+# Number input count badhane ke liye
 num_themes = st.sidebar.number_input("How many video clips (themes)?", min_value=1, max_value=10, value=3, step=1, key="num_themes_count")
 
-themes_list = []
-# Har text input ko unique key dena zaroori hai taake Streamlit crash na ho
+active_themes = []
+# Har theme field ke sath handle lagana
 for i in range(int(num_themes)):
-    default_val = "nature" if i == 0 else f"motivation {i+1}"
-    theme_val = st.sidebar.text_input(f"Theme {i+1} (Scene Keyword)", value=default_val, key=f"theme_input_key_{i}")
-    themes_list.append(theme_val)
+    st.sidebar.markdown(f"**Scene {i+1}**")
+    
+    # 1. Chekbox lagaya jo cross (Delete) ka kaam karega
+    is_removed = st.sidebar.checkbox(f"❌ Remove Scene {i+1}", key=f"remove_check_{i}")
+    
+    # 2. Agar checkbox tick nahi hai, toh input box show karo aur active list mein daalo
+    if not is_removed:
+        default_val = "nature" if i == 0 else f"motivation {i+1}"
+        theme_val = st.sidebar.text_input(f"Keyword for Scene {i+1}", value=default_val, key=f"theme_input_key_{i}", label_visibility="collapsed")
+        active_themes.append(theme_val)
+    else:
+        st.sidebar.caption("*(This scene will be skipped)*")
+    
+    st.sidebar.markdown("---")
 
-st.sidebar.markdown("---")
 voice_option = st.sidebar.selectbox("Select Voice", ["en-US-ChristopherNeural", "en-US-EmmaNeural"])
 generate_button = st.sidebar.button("🚀 Generate Reel", type="primary", use_container_width=True)
 
@@ -61,7 +71,7 @@ def create_subtitles(VOICE_FILE):
         for word in segment.get('words', []):
             clean_word = word['word'].strip()
             if clean_word:
-                padded_text = f"{clean_word}\n " # Hidden space hack
+                padded_text = f"{clean_word}\n "
                 
                 txt = TextClip(
                     text=padded_text, 
@@ -81,8 +91,8 @@ if generate_button:
         st.error("❌ PEXELS_API_KEY missing in Streamlit Secrets!")
         st.stop()
 
-    if not themes_list or any(t == "" for t in themes_list):
-        st.error("❌ Please fill all the theme keywords before generating!")
+    if not active_themes or any(t == "" for t in active_themes):
+        st.error("❌ Active scene keywords cannot be empty!")
         st.stop()
 
     with st.status("🏗️ Building your Custom Reel on Cloud...", expanded=True) as status:
@@ -91,11 +101,11 @@ if generate_button:
             st.write("🎙️ Generating Voice...")
             asyncio.run(edge_tts.Communicate(text_input, voice_option).save("voice.mp3"))
 
-            # 2. Dynamic Media Download
-            st.write(f"🔍 Downloading {len(themes_list)} Video Clips...")
+            # 2. Dynamic Media Download (Sirf active themes ka)
+            st.write(f"🔍 Downloading {len(active_themes)} Video Clips...")
             downloaded_files = []
-            for idx, theme in enumerate(themes_list):
-                st.write(f"  📥 Downloading scene {idx+1}: {theme}...")
+            for idx, theme in enumerate(active_themes):
+                st.write(f"  📥 Downloading active scene {idx+1}: {theme}...")
                 file_path = download_video(theme, idx+1)
                 if file_path:
                     downloaded_files.append(file_path)
@@ -108,7 +118,7 @@ if generate_button:
             audio = AudioFileClip("voice.mp3")
             total_dur = audio.duration
             
-            # Har video ka duration divide karna
+            # Duration allocation
             clip_duration = total_dur / len(downloaded_files)
             
             video_clips = []
