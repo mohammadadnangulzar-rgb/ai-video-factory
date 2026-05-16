@@ -49,17 +49,21 @@ def create_subtitles(VOICE_FILE):
     
     for segment in result['segments']:
         for word in segment.get('words', []):
-            # method='label' text ko katne se har haal mein bachata hai bina bg_color ke
-            txt = TextClip(
-                text=word['word'].strip(), 
-                font_size=60, 
-                color='white',
-                stroke_color='black',
-                stroke_width=3,
-                method='label' # Is se text auto-wrap hoga aur text nahi katega
-            ).with_start(word['start']).with_end(word['end']) \
-             .with_position(('center', 0.72), relative=True) # Safe center position
-            subtitle_clips.append(txt)
+            clean_word = word['word'].strip()
+            # AGAR LAFZ KHALI NAHI HAI TOH USME VERTICAL PADDING ADD KAREIN
+            if clean_word:
+                padded_text = f"{clean_word}\n " # Lafz ke baad enter aur space taake neeche se cut na ho
+                
+                txt = TextClip(
+                    text=padded_text, 
+                    font_size=55, # Font size thoda mazeed optimize kiya
+                    color='white',
+                    stroke_color='black',
+                    stroke_width=3,
+                    method='label'
+                ).with_start(word['start']).with_end(word['end']) \
+                 .with_position(('center', 0.70), relative=True) # Thoda mazeed upar safe area mein shift kiya
+                subtitle_clips.append(txt)
     return subtitle_clips
 
 # ================== GENERATION ==================
