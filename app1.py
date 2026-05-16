@@ -49,17 +49,16 @@ def create_subtitles(VOICE_FILE):
     
     for segment in result['segments']:
         for word in segment.get('words', []):
-            # NO FONT SPECIFIED - MoviePy uses system default
+            # method='label' text ko katne se har haal mein bachata hai bina bg_color ke
             txt = TextClip(
-                text=word['word'].strip(),
-                font_size=55, # Font size 55 kar diya
+                text=word['word'].strip(), 
+                font_size=60, 
                 color='white',
                 stroke_color='black',
-                stroke_width=2,
-                method='caption',
-                size=(600, None)
+                stroke_width=3,
+                method='label' # Is se text auto-wrap hoga aur text nahi katega
             ).with_start(word['start']).with_end(word['end']) \
-             .with_position(('center', 0.75), relative=True) # Position 0.75 (thoda upar) kar di
+             .with_position(('center', 0.72), relative=True) # Safe center position
             subtitle_clips.append(txt)
     return subtitle_clips
 
