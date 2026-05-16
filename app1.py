@@ -1,9 +1,8 @@
 import streamlit as st
-import asyncio
-import edge_tts
 import requests
 import os
 import whisper
+from gtts import gTTS  # Google TTS Backup for Cloud Bypass
 from moviepy import (VideoFileClip, AudioFileClip, TextClip, 
                     CompositeVideoClip, concatenate_videoclips)
 
@@ -13,7 +12,7 @@ PEXELS_API_KEY = st.secrets.get("PEXELS_API_KEY", "")
 
 st.set_page_config(page_title="AI Reel Maker", layout="centered")
 st.title("🎬 Roman Urdu AI Faceless Reel Maker")
-st.markdown("**Cloud Engine Active with Natural Pakistani/Asian Voices**")
+st.markdown("**Cloud Engine Active (Google Safe Mode)**")
 
 # ================== SIDEBAR ==================
 st.sidebar.header("🎯 Reel Settings")
@@ -38,19 +37,10 @@ for i in range(int(num_themes)):
     
     st.sidebar.markdown("---")
 
-# --- FIXED VOICE SELECTION LAYOUT ---
-voices_dict = {
-    "ur-PK-AsafNeural": "ur-PK-AsafNeural (Pakistani Male)",
-    "ur-PK-UzmaNeural": "ur-PK-UzmaNeural (Pakistani Female)",
-    "hi-IN-MadhurNeural": "hi-IN-MadhurNeural (Indian/Urdu Male)",
-    "hi-IN-SwaraNeural": "hi-IN-SwaraNeural (Indian/Urdu Female)"
-}
-
-# format_func se sirf display name change hoga, backend par exact key (ID) jayegi
+# --- MULTIPLE ACCENTS OPTIONS ---
 voice_option = st.sidebar.selectbox(
-    "Select Voice (Asian/Urdu Accent)", 
-    options=list(voices_dict.keys()),
-    format_func=lambda x: voices_dict[x]
+    "Select Voice (Cloud Accent Mode)", 
+    ["Urdu (Natural Pakistani)", "Hindi (Subcontinent Accent)", "English (UK Male Accent)"]
 )
 
 generate_button = st.sidebar.button("🚀 Generate Reel", type="primary", use_container_width=True)
@@ -106,9 +96,18 @@ if generate_button:
 
     with st.status("🏗️ Building your Custom Reel on Cloud...", expanded=True) as status:
         try:
-            # 1. Voice
-            st.write(f"🎙️ Generating Voice using {voice_option}...")
-            asyncio.run(edge_tts.Communicate(text_input, voice_option).save("voice.mp3"))
+            # 1. Voice Generation using Google (No-Block Bypass)
+            st.write(f"🎙️ Generating Voice using Google Engine ({voice_option})...")
+            
+            # Map selection to language code
+            if "Urdu" in voice_option:
+                tts = gTTS(text=text_input, lang='ur', slow=False)
+            elif "Hindi" in voice_option:
+                tts = gTTS(text=text_input, lang='hi', slow=False)
+            else:
+                tts = gTTS(text=text_input, lang='en', tld='co.uk', slow=False)
+                
+            tts.save("voice.mp3")
 
             # 2. Media Download
             st.write(f"🔍 Downloading {len(active_themes)} Video Clips...")
