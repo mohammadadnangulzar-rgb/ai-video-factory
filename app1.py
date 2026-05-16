@@ -49,16 +49,17 @@ def create_subtitles(VOICE_FILE):
     
     for segment in result['segments']:
         for word in segment.get('words', []):
-            # No font name specified to avoid Linux errors - it will use system default
+            # NO FONT SPECIFIED - MoviePy uses system default
             txt = TextClip(
                 text=word['word'].strip(),
-                font_size=65,
+                font_size=55, # Font size 55 kar diya
                 color='white',
                 stroke_color='black',
                 stroke_width=2,
                 method='caption',
                 size=(600, None)
-            ).with_start(word['start']).with_end(word['end']).with_position(('center', 0.8), relative=True)
+            ).with_start(word['start']).with_end(word['end']) \
+             .with_position(('center', 0.75), relative=True) # Position 0.75 (thoda upar) kar di
             subtitle_clips.append(txt)
     return subtitle_clips
 
@@ -107,7 +108,7 @@ if generate_button:
             
             st.video("final_reel.mp4")
             with open("final_reel.mp4", "rb") as f:
-                st.download_button("📥 Download to Device", f, file_name="AI_Reel.mp4")
+                st.download_button("📥 Download to Device", f, file_name="AI_Reel.mp4", use_container_width=True)
 
         except Exception as e:
             st.error(f"Rendering Failed: {e}")
