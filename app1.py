@@ -38,18 +38,20 @@ for i in range(int(num_themes)):
     
     st.sidebar.markdown("---")
 
-# --- NEW: BEHTREEN ROMAN URDU VOICES ---
-voice_display = st.sidebar.selectbox(
+# --- FIXED VOICE SELECTION LAYOUT ---
+voices_dict = {
+    "ur-PK-AsafNeural": "ur-PK-AsafNeural (Pakistani Male)",
+    "ur-PK-UzmaNeural": "ur-PK-UzmaNeural (Pakistani Female)",
+    "hi-IN-MadhurNeural": "hi-IN-MadhurNeural (Indian/Urdu Male)",
+    "hi-IN-SwaraNeural": "hi-IN-SwaraNeural (Indian/Urdu Female)"
+}
+
+# format_func se sirf display name change hoga, backend par exact key (ID) jayegi
+voice_option = st.sidebar.selectbox(
     "Select Voice (Asian/Urdu Accent)", 
-    [
-        "ur-PK-AsafNeural (Pakistani Male)", 
-        "ur-PK-UzmaNeural (Pakistani Female)",
-        "hi-IN-MadhurNeural (Indian/Urdu Male)",
-        "hi-IN-SwaraNeural (Indian/Urdu Female)"
-    ]
+    options=list(voices_dict.keys()),
+    format_func=lambda x: voices_dict[x]
 )
-# Asli voice id nikalne ke liye split kiya
-voice_option = voice_display.split(" ")[0]
 
 generate_button = st.sidebar.button("🚀 Generate Reel", type="primary", use_container_width=True)
 
@@ -105,7 +107,7 @@ if generate_button:
     with st.status("🏗️ Building your Custom Reel on Cloud...", expanded=True) as status:
         try:
             # 1. Voice
-            st.write(f"🎙️ Generating Voice using {voice_display}...")
+            st.write(f"🎙️ Generating Voice using {voice_option}...")
             asyncio.run(edge_tts.Communicate(text_input, voice_option).save("voice.mp3"))
 
             # 2. Media Download
