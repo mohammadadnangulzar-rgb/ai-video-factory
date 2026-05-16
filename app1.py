@@ -8,21 +8,29 @@ from moviepy import (VideoFileClip, AudioFileClip, TextClip,
                     CompositeVideoClip, concatenate_videoclips)
 
 # ------------------- CLOUD CONFIG -------------------
-# ImageMagick path for Linux (Streamlit Cloud)
 os.environ["IMAGEMAGICK_BINARY"] = "/usr/bin/convert"
-
-# Fetching API Key from Streamlit Secrets
 PEXELS_API_KEY = st.secrets.get("PEXELS_API_KEY", "")
 
 st.set_page_config(page_title="AI Reel Maker", layout="centered")
-st.title("🎬 AI Faceless Reel Maker")
-st.markdown("**Cloud Engine Active**")
+st.title("🎬 Dynamic AI Faceless Reel Maker")
+st.markdown("**Cloud Engine Active with Dynamic Themes**")
 
 # ================== SIDEBAR ==================
 st.sidebar.header("🎯 Reel Settings")
-text_input = st.sidebar.text_area("Script (Voiceover)", "Self love is the foundation of a happy life.", height=130)
-theme1 = st.sidebar.text_input("Theme 1", "nature")
-theme2 = st.sidebar.text_input("Theme 2", "peaceful meditation")
+text_input = st.sidebar.text_area("Script (Voiceover)", "Self love is the foundation of a happy life. Every single day, remind yourself of your worth and keep pushing forward.", height=130)
+
+# --- NEW: CUSTOM NUMBER OF THEMES OPTION ---
+st.sidebar.markdown("---")
+st.sidebar.subheader("🎥 Video Layout")
+num_themes = st.sidebar.number_input("How many video clips (themes)?", min_value=1, max_value=10, value=3, step=1)
+
+# Dynamic input boxes generate karna jitni user ne select ki hain
+themes_list = []
+for i in range(int(num_themes)):
+    theme_val = st.sidebar.text_input(f"Theme {i+1} (Scene Keyword)", value=f"motivation {i+1}" if i > 0 else "nature")
+    themes_list.append(theme_val)
+
+st.sidebar.markdown("---")
 voice_option = st.sidebar.selectbox("Select Voice", ["en-US-ChristopherNeural", "en-US-EmmaNeural"])
 generate_button = st.sidebar.button("🚀 Generate Reel", type="primary", use_container_width=True)
 
@@ -50,19 +58,18 @@ def create_subtitles(VOICE_FILE):
     for segment in result['segments']:
         for word in segment.get('words', []):
             clean_word = word['word'].strip()
-            # AGAR LAFZ KHALI NAHI HAI TOH USME VERTICAL PADDING ADD KAREIN
             if clean_word:
-                padded_text = f"{clean_word}\n " # Lafz ke baad enter aur space taake neeche se cut na ho
+                padded_text = f"{clean_word}\n " # Hidden space hack
                 
                 txt = TextClip(
                     text=padded_text, 
-                    font_size=55, # Font size thoda mazeed optimize kiya
+                    font_size=55, 
                     color='white',
                     stroke_color='black',
                     stroke_width=3,
                     method='label'
                 ).with_start(word['start']).with_end(word['end']) \
-                 .with_position(('center', 0.70), relative=True) # Thoda mazeed upar safe area mein shift kiya
+                 .with_position(('center', 0.70), relative=True)
                 subtitle_clips.append(txt)
     return subtitle_clips
 
@@ -72,31 +79,39 @@ if generate_button:
         st.error("❌ PEXELS_API_KEY missing in Streamlit Secrets!")
         st.stop()
 
-    with st.status("🏗️ Building your Reel on Cloud...", expanded=True) as status:
+    with st.status("🏗️ Building your Custom Reel on Cloud...", expanded=True) as status:
         try:
             # 1. Voice
             st.write("🎙️ Generating Voice...")
             asyncio.run(edge_tts.Communicate(text_input, voice_option).save("voice.mp3"))
 
-            # 2. Media
-            st.write("🔍 Downloading Assets...")
-            file1 = download_video(theme1, 1)
-            file2 = download_video(theme2, 2)
+            # 2. Dynamic Media Download
+            st.write(f"🔍 Downloading {len(themes_list)} Video Clips...")
+            downloaded_files = []
+            for idx, theme in enumerate(themes_list):
+                st.write(f"  📥 Downloading scene {idx+1}: {theme}...")
+                file_path = download_video(theme, idx+1)
+                if file_path:
+                    downloaded_files.append(file_path)
+                else:
+                    st.error(f"Could not find video for theme: {theme}")
+                    st.stop()
 
-            if not file1 or not file2:
-                st.error("Could not find videos on Pexels.")
-                st.stop()
-
-            # 3. Assemble
+            # 3. Assemble Dynamic Timeline
             st.write("🎬 Stitching Timeline...")
             audio = AudioFileClip("voice.mp3")
             total_dur = audio.duration
             
-            # Simple resize to Reel format (9:16)
-            v1 = VideoFileClip(file1).resized((720, 1280)).with_duration(total_dur/2)
-            v2 = VideoFileClip(file2).resized((720, 1280)).with_duration(total_dur/2)
+            # Har video ka duration = total audio duration / number of clips
+            clip_duration = total_dur / len(downloaded_files)
             
-            video = concatenate_videoclips([v1, v2]).with_audio(audio)
+            video_clips = []
+            for file_path in downloaded_files:
+                v_clip = VideoFileClip(file_path).resized((720, 1280)).with_duration(clip_duration)
+                video_clips.append(v_clip)
+            
+            # Saari clips ko concatenate (jodna) karna
+            video = concatenate_videoclips(video_clips).with_audio(audio)
 
             # 4. Subtitles
             st.write("✍️ Adding AI Subtitles...")
@@ -107,11 +122,11 @@ if generate_button:
             st.write("⚡ Rendering Final MP4...")
             final.write_videofile("final_reel.mp4", fps=24, codec="libx264", audio_codec="aac")
             
-            status.update(label="✅ Reel Ready!", state="complete", expanded=False)
+            status.update(label="✅ Custom Reel Ready!", state="complete", expanded=False)
             
             st.video("final_reel.mp4")
             with open("final_reel.mp4", "rb") as f:
-                st.download_button("📥 Download to Device", f, file_name="AI_Reel.mp4", use_container_width=True)
+                st.download_button("📥 Download to Device", f, file_name="AI_Custom_Reel.mp4", use_container_width=True)
 
         except Exception as e:
             st.error(f"Rendering Failed: {e}")
