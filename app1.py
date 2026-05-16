@@ -19,15 +19,17 @@ st.markdown("**Cloud Engine Active with Dynamic Themes**")
 st.sidebar.header("🎯 Reel Settings")
 text_input = st.sidebar.text_area("Script (Voiceover)", "Self love is the foundation of a happy life. Every single day, remind yourself of your worth and keep pushing forward.", height=130)
 
-# --- NEW: CUSTOM NUMBER OF THEMES OPTION ---
 st.sidebar.markdown("---")
 st.sidebar.subheader("🎥 Video Layout")
-num_themes = st.sidebar.number_input("How many video clips (themes)?", min_value=1, max_value=10, value=3, step=1)
 
-# Dynamic input boxes generate karna jitni user ne select ki hain
+# Number input ko handle karne ka sabse stable tareeka widget key ke sath
+num_themes = st.sidebar.number_input("How many video clips (themes)?", min_value=1, max_value=10, value=3, step=1, key="num_themes_count")
+
 themes_list = []
+# Har text input ko unique key dena zaroori hai taake Streamlit crash na ho
 for i in range(int(num_themes)):
-    theme_val = st.sidebar.text_input(f"Theme {i+1} (Scene Keyword)", value=f"motivation {i+1}" if i > 0 else "nature")
+    default_val = "nature" if i == 0 else f"motivation {i+1}"
+    theme_val = st.sidebar.text_input(f"Theme {i+1} (Scene Keyword)", value=default_val, key=f"theme_input_key_{i}")
     themes_list.append(theme_val)
 
 st.sidebar.markdown("---")
@@ -79,6 +81,10 @@ if generate_button:
         st.error("❌ PEXELS_API_KEY missing in Streamlit Secrets!")
         st.stop()
 
+    if not themes_list or any(t == "" for t in themes_list):
+        st.error("❌ Please fill all the theme keywords before generating!")
+        st.stop()
+
     with st.status("🏗️ Building your Custom Reel on Cloud...", expanded=True) as status:
         try:
             # 1. Voice
@@ -102,7 +108,7 @@ if generate_button:
             audio = AudioFileClip("voice.mp3")
             total_dur = audio.duration
             
-            # Har video ka duration = total audio duration / number of clips
+            # Har video ka duration divide karna
             clip_duration = total_dur / len(downloaded_files)
             
             video_clips = []
@@ -110,7 +116,6 @@ if generate_button:
                 v_clip = VideoFileClip(file_path).resized((720, 1280)).with_duration(clip_duration)
                 video_clips.append(v_clip)
             
-            # Saari clips ko concatenate (jodna) karna
             video = concatenate_videoclips(video_clips).with_audio(audio)
 
             # 4. Subtitles
